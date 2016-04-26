@@ -17,48 +17,60 @@ var toFixed = function toFixed(number, precision) {
 	return Math.round(wholeNumber / 10) * 10 / multiplier;
 };
 
-var px2rem = function px2rem(m, val) {
-	return !val ? m : toFixed(parseFloat(val) / rootValue, unitPrecision) + 'rem';
+var px2rem = function px2rem(rootValue, unitPrecision) {
+	return function (m, val) {
+		return !val ? m : toFixed(parseFloat(val) / rootValue, unitPrecision) + 'rem';
+	};
 };
 
 var baseMediaQuery = function baseMediaQuery(maxWidth, layoutWidth, fontSize) {
-	return _postcss2.default.parse(['@media screen and (max-width: ', maxWidth, 'px) {', 'html { font-size:', px2vw(fontSize, layoutWidth), 'vw; }', '}'].join(''));
+	return _postcss2.default.parse('@media screen and (max-width: ' + maxWidth + 'px) { \n\t\thtml { font-size: ' + px2vw(fontSize, layoutWidth) + 'vw; }}');
 };
 
-function remExists(decls, prop, value) {
+var remExists = function remExists(decls, prop, value) {
 	return decls.some(function (decl) {
 		return decl.prop === prop && decl.value === value;
 	});
-}
+};
 
-function blacklisted(blacklist, value) {
+var blacklisted = function blacklisted(blacklist, value) {
 	return typeof selector === 'string' ? blacklist.some(function (regex) {
 		return value.match(regex);
 	}) : null;
-}
+};
 
-module.exports = _postcss2.default.plugin('postcss-vw', function (options) {
+function postcssVw(_ref) {
+	var _ref$rootValue = _ref.rootValue;
+	var rootValue = _ref$rootValue === undefined ? 16 : _ref$rootValue;
+	var _ref$unitPrecision = _ref.unitPrecision;
+	var unitPrecision = _ref$unitPrecision === undefined ? 5 : _ref$unitPrecision;
+	var _ref$replace = _ref.replace;
+	var replace = _ref$replace === undefined ? true : _ref$replace;
+	var _ref$rootSelector = _ref.rootSelector;
+	var rootSelector = _ref$rootSelector === undefined ? 'html' : _ref$rootSelector;
+	var _ref$baseFontSize = _ref.baseFontSize;
+	var baseFontSize = _ref$baseFontSize === undefined ? 16 : _ref$baseFontSize;
+	var _ref$desktopWidth = _ref.desktopWidth;
+	var desktopWidth = _ref$desktopWidth === undefined ? 1250 : _ref$desktopWidth;
+	var _ref$tabletWidth = _ref.tabletWidth;
+	var tabletWidth = _ref$tabletWidth === undefined ? 640 : _ref$tabletWidth;
+	var _ref$mobileWidth = _ref.mobileWidth;
+	var mobileWidth = _ref$mobileWidth === undefined ? 320 : _ref$mobileWidth;
+	var _ref$blacklistProps = _ref.blacklistProps;
+	var blacklistProps = _ref$blacklistProps === undefined ? [] : _ref$blacklistProps;
+	var _ref$desktopMax = _ref.desktopMax;
+	var desktopMax = _ref$desktopMax === undefined ? 1250 : _ref$desktopMax;
+	var _ref$desktopMin = _ref.desktopMin;
+	var desktopMin = _ref$desktopMin === undefined ? 900 : _ref$desktopMin;
+	var _ref$tabletMin = _ref.tabletMin;
+	var tabletMin = _ref$tabletMin === undefined ? 601 : _ref$tabletMin;
+	var _ref$bodyWidthFix = _ref.bodyWidthFix;
+	var bodyWidthFix = _ref$bodyWidthFix === undefined ? true : _ref$bodyWidthFix;
+
 	var pxTest = /"[^"]+"|'[^']+'|url\([^\)]+\)|(\d*\.?\d+)px/ig;
 
-	var o = options || {};
-	var rootValue = o.rootValue || 16;
-	var unitPrecision = o.unitPrecision || 5;
-	var replaceDeclaration = o.replace || true;
-	var rootSelector = o.rootSelector || 'html';
-	var baseFontSize = o.baseFontSize || 16;
-	var desktopWidth = o.desktopWidth || 1250;
-	var tabletWidth = o.tabletWidth || 640;
-	var mobileWidth = o.mobileWidth || 320;
-
-	var blacklistProps = o.blacklistProps || [];
-
-	var desktopMax = o.desktopMax || 1250;
-	var desktopMin = o.desktopMin || 900;
 	var tabletMax = desktopMin - 1;
-	var tabletMin = o.tabletMin || 601;
 	var mobileMax = tabletMin - 1;
-
-	var bodyWidthFix = o.bodyWidthFix || true;
 
 	var mediaScreenDesktop = baseMediaQuery(desktopMax, desktopWidth, baseFontSize);
 	var mediaScreenTablet = baseMediaQuery(tabletMax, tabletWidth, baseFontSize);
@@ -72,10 +84,11 @@ module.exports = _postcss2.default.plugin('postcss-vw', function (options) {
 		rootNode.prepend(mediaScreenTablet);
 		rootNode.prepend(mediaScreenDesktop);
 
-		style.walkDecls(function (decl, i) {
-			var rule = decl.parent;
-			var value = decl.value;
-			var remValue;
+		style.walkDecls(function (_ref2, i) {
+			var parent = _ref2.parent;
+			var value = _ref2.value;
+
+			var rule = parent;
 
 			if (value && value.indexOf('px') !== -1) {
 
@@ -86,7 +99,7 @@ module.exports = _postcss2.default.plugin('postcss-vw', function (options) {
 					return;
 				}
 
-				remValue = value.replace(pxTest, px2rem);
+				var remValue = value.replace(pxTest, px2rem(rootValue, unitPrecision));
 
 				if (remExists(rule, decl.prop, remValue)) {
 					return;
@@ -111,4 +124,6 @@ module.exports = _postcss2.default.plugin('postcss-vw', function (options) {
 			}
 		});
 	};
-});
+}
+
+module.exports = _postcss2.default.plugin('postcss-vw', postcssVw);
