@@ -1,6 +1,6 @@
 {
   "name": "postcss-vw",
-  "version": "0.1.0",
+  "version": "0.1.8",
   "description": "PostCSS plugin for pixels to rem + vw base",
   "keywords": [
     "postcss",
@@ -12,7 +12,10 @@
   ],
   "author": "Nicholas Mitchell <mitchellnicholasl@gmail.com>",
   "license": "MIT",
-  "repository": "nimi/postcss-vw",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nimi/postcss-vw.git"
+  },
   "bugs": {
     "url": "https://github.com/nimi/postcss-vw/issues"
   },
@@ -29,6 +32,6 @@
   "main": "index.es5.js",
   "scripts": {
     "test": "ava && eslint *.js",
-    "compile": "./node_modules/.bin/babel index.js --out-file index.es5.js --presets es2015"
+    "compile": "babel index.js --out-file index.es5.js --presets es2015"
   }
 }

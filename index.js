@@ -24,29 +24,33 @@ const remExists = (decls, prop, value) =>
 const blacklisted = (blacklist, value) =>
 	typeof selector === 'string' ? blacklist.some(regex => value.match(regex)) : null;
 
-function postcssVw({
-	rootValue = 16,
-	unitPrecision = 5,
-	replace = true,
-	rootSelector = 'html',
-	baseFontSize = 16,
-	desktopWidth = 1250,
-	tabletWidth = 640,
-	mobileWidth = 320,
-	blacklistProps = [],
-	desktopMax = 1250,
-	desktopMin = 900,
-	tabletMin = 601,
-	bodyWidthFix = true
-}) {
+function postcssVw(opts = {}) {
+	const defaultOptions = {
+		rootValue: 16,
+		unitPrecision: 5,
+		replaceDeclaration: true,
+		rootSelector: 'html',
+		baseFontSize: 16,
+		desktopWidth: 1250,
+		tabletWidth: 640,
+		mobileWidth: 320,
+		blacklistProps: [],
+		desktopMax: 1250,
+		desktopMin: 900,
+		tabletMin: 601,
+		bodyWidthFix: true
+	};
+
+	const o = Object.assign({}, defaultOptions, opts);
+
 	const pxTest = /"[^"]+"|'[^']+'|url\([^\)]+\)|(\d*\.?\d+)px/ig;
 
-	const tabletMax = desktopMin - 1;
-	const mobileMax = tabletMin - 1;
+	const tabletMax = o.desktopMin - 1;
+	const mobileMax = o.tabletMin - 1;
 
-	const mediaScreenDesktop = baseMediaQuery(desktopMax, desktopWidth, baseFontSize);
-	const mediaScreenTablet = baseMediaQuery(tabletMax, tabletWidth, baseFontSize);
-	const mediaScreenMobile = baseMediaQuery(mobileMax, mobileWidth, baseFontSize);
+	const mediaScreenDesktop = baseMediaQuery(o.desktopMax, o.desktopWidth, o.baseFontSize);
+	const mediaScreenTablet = baseMediaQuery(tabletMax, o.tabletWidth, o.baseFontSize);
+	const mediaScreenMobile = baseMediaQuery(mobileMax, o.mobileWidth, o.baseFontSize);
 
 	return style => {
 
@@ -56,19 +60,20 @@ function postcssVw({
 		rootNode.prepend(mediaScreenTablet);
 		rootNode.prepend(mediaScreenDesktop);
 
-		style.walkDecls(({parent, value}, i) => {
-			const rule = parent;
+		style.walkDecls((decl, i) => {
+			const rule = decl.parent;
+			const value = decl.value;
 
 			if (value && value.indexOf('px') !== -1) {
 
-				if (Array.isArray(blacklistProps) && blacklisted(blacklistProps, decl.prop)) { return; }
-				if (typeof blacklistProps === 'function' && blacklistProps(decl)) { return; }
+				if (Array.isArray(o.blacklistProps) && blacklisted(o.blacklistProps, decl.prop)) { return; }
+				if (typeof o.blacklistProps === 'function' && o.blacklistProps(decl)) { return; }
 
-				const remValue = value.replace(pxTest, px2rem(rootValue, unitPrecision));
+				const remValue = value.replace(pxTest, px2rem(o.rootValue, o.unitPrecision));
 
 				if (remExists(rule, decl.prop, remValue)) { return; }
 
-				if (replaceDeclaration) {
+				if (o.replaceDeclaration) {
 					decl.value = remValue;
 				} else {
 					rule.insertAfter(i, decl.clone({ value: remValue }));
@@ -83,7 +88,7 @@ function postcssVw({
 				html.append({ prop: 'width', value: '100vw' });
 				html.append({ prop: 'margin-left', value: 'calc((100% / 100vw) /2)' });
 				html.append({ prop: 'overflow-x', value: 'hidden' });
-				html.append({ prop: 'font-size', value: baseFontSize * (desktopMax / desktopWidth) });
+				html.append({ prop: 'font-size', value: o.baseFontSize * (o.desktopMax / o.desktopWidth) });
 			}
 		});
 	};

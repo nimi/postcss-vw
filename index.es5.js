@@ -39,42 +39,35 @@ var blacklisted = function blacklisted(blacklist, value) {
 	}) : null;
 };
 
-function postcssVw(_ref) {
-	var _ref$rootValue = _ref.rootValue;
-	var rootValue = _ref$rootValue === undefined ? 16 : _ref$rootValue;
-	var _ref$unitPrecision = _ref.unitPrecision;
-	var unitPrecision = _ref$unitPrecision === undefined ? 5 : _ref$unitPrecision;
-	var _ref$replace = _ref.replace;
-	var replace = _ref$replace === undefined ? true : _ref$replace;
-	var _ref$rootSelector = _ref.rootSelector;
-	var rootSelector = _ref$rootSelector === undefined ? 'html' : _ref$rootSelector;
-	var _ref$baseFontSize = _ref.baseFontSize;
-	var baseFontSize = _ref$baseFontSize === undefined ? 16 : _ref$baseFontSize;
-	var _ref$desktopWidth = _ref.desktopWidth;
-	var desktopWidth = _ref$desktopWidth === undefined ? 1250 : _ref$desktopWidth;
-	var _ref$tabletWidth = _ref.tabletWidth;
-	var tabletWidth = _ref$tabletWidth === undefined ? 640 : _ref$tabletWidth;
-	var _ref$mobileWidth = _ref.mobileWidth;
-	var mobileWidth = _ref$mobileWidth === undefined ? 320 : _ref$mobileWidth;
-	var _ref$blacklistProps = _ref.blacklistProps;
-	var blacklistProps = _ref$blacklistProps === undefined ? [] : _ref$blacklistProps;
-	var _ref$desktopMax = _ref.desktopMax;
-	var desktopMax = _ref$desktopMax === undefined ? 1250 : _ref$desktopMax;
-	var _ref$desktopMin = _ref.desktopMin;
-	var desktopMin = _ref$desktopMin === undefined ? 900 : _ref$desktopMin;
-	var _ref$tabletMin = _ref.tabletMin;
-	var tabletMin = _ref$tabletMin === undefined ? 601 : _ref$tabletMin;
-	var _ref$bodyWidthFix = _ref.bodyWidthFix;
-	var bodyWidthFix = _ref$bodyWidthFix === undefined ? true : _ref$bodyWidthFix;
+function postcssVw() {
+	var opts = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	var defaultOptions = {
+		rootValue: 16,
+		unitPrecision: 5,
+		replaceDeclaration: true,
+		rootSelector: 'html',
+		baseFontSize: 16,
+		desktopWidth: 1250,
+		tabletWidth: 640,
+		mobileWidth: 320,
+		blacklistProps: [],
+		desktopMax: 1250,
+		desktopMin: 900,
+		tabletMin: 601,
+		bodyWidthFix: true
+	};
+
+	var o = Object.assign({}, defaultOptions, opts);
 
 	var pxTest = /"[^"]+"|'[^']+'|url\([^\)]+\)|(\d*\.?\d+)px/ig;
 
-	var tabletMax = desktopMin - 1;
-	var mobileMax = tabletMin - 1;
+	var tabletMax = o.desktopMin - 1;
+	var mobileMax = o.tabletMin - 1;
 
-	var mediaScreenDesktop = baseMediaQuery(desktopMax, desktopWidth, baseFontSize);
-	var mediaScreenTablet = baseMediaQuery(tabletMax, tabletWidth, baseFontSize);
-	var mediaScreenMobile = baseMediaQuery(mobileMax, mobileWidth, baseFontSize);
+	var mediaScreenDesktop = baseMediaQuery(o.desktopMax, o.desktopWidth, o.baseFontSize);
+	var mediaScreenTablet = baseMediaQuery(tabletMax, o.tabletWidth, o.baseFontSize);
+	var mediaScreenMobile = baseMediaQuery(mobileMax, o.mobileWidth, o.baseFontSize);
 
 	return function (style) {
 
@@ -84,28 +77,26 @@ function postcssVw(_ref) {
 		rootNode.prepend(mediaScreenTablet);
 		rootNode.prepend(mediaScreenDesktop);
 
-		style.walkDecls(function (_ref2, i) {
-			var parent = _ref2.parent;
-			var value = _ref2.value;
-
-			var rule = parent;
+		style.walkDecls(function (decl, i) {
+			var rule = decl.parent;
+			var value = decl.value;
 
 			if (value && value.indexOf('px') !== -1) {
 
-				if (Array.isArray(blacklistProps) && blacklisted(blacklistProps, decl.prop)) {
+				if (Array.isArray(o.blacklistProps) && blacklisted(o.blacklistProps, decl.prop)) {
 					return;
 				}
-				if (typeof blacklistProps === 'function' && blacklistProps(decl)) {
+				if (typeof o.blacklistProps === 'function' && o.blacklistProps(decl)) {
 					return;
 				}
 
-				var remValue = value.replace(pxTest, px2rem(rootValue, unitPrecision));
+				var remValue = value.replace(pxTest, px2rem(o.rootValue, o.unitPrecision));
 
 				if (remExists(rule, decl.prop, remValue)) {
 					return;
 				}
 
-				if (replaceDeclaration) {
+				if (o.replaceDeclaration) {
 					decl.value = remValue;
 				} else {
 					rule.insertAfter(i, decl.clone({ value: remValue }));
@@ -120,7 +111,7 @@ function postcssVw(_ref) {
 				html.append({ prop: 'width', value: '100vw' });
 				html.append({ prop: 'margin-left', value: 'calc((100% / 100vw) /2)' });
 				html.append({ prop: 'overflow-x', value: 'hidden' });
-				html.append({ prop: 'font-size', value: baseFontSize * (desktopMax / desktopWidth) });
+				html.append({ prop: 'font-size', value: o.baseFontSize * (o.desktopMax / o.desktopWidth) });
 			}
 		});
 	};
